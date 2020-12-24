@@ -6,7 +6,8 @@ export const dijkstra = async ({
   addVisitedCell,
   addExploredCell,
   addPath,
-  _getState
+  _getState,
+  dispatch
 }={}) => {
   const GRID_WIDTH = _getState().grid.gridWidth
   const GRID_HEIGHT = _getState().grid.gridHeight
@@ -52,43 +53,62 @@ export const dijkstra = async ({
   // Start searching
   let cur
   while (!frontier.isEmpty()) {
-    console.log(frontier.toArray())
     cur = frontier.dequeue()
 
     // visit cell
-    addVisitedCell(cur)
+    dispatch(addVisitedCell(cur))
     cellsDict[cur].isVisited = true
 
     if (cur === END_INDEX) {
       break
     }
+
     // Check adjacent cells
     const sourceDistance = cellsDict[cur].distance
-    cellsDict[cur].adjacent.forEach(async adj => {
+    const adjacentList = cellsDict[cur].adjacent
+    for(let i = 0; i < adjacentList.length; i++) {
+      let adj = adjacentList[i]
       const newDistance = sourceDistance + 1
       if (isValidCell(adj, _getState) && !cellsDict[adj].isVisited && (newDistance < cellsDict[adj].distance)) {
         // explore cell
-        addExploredCell(adj)
-        // await sleep()
+        dispatch(addExploredCell(adj))
 
         cellsDict[adj].distance = newDistance
         cellsDict[adj].prev = cur
         frontier.enqueue(adj)
       }
-    })
+    }
   }
 
   // draw path
-  // const path = []
   let curIdx = END_INDEX
   cur = cellsDict[curIdx]
   while (curIdx !== null) {
-    // path.push(curIdx)
-    addPath(curIdx)
+    dispatch(addPath(curIdx))
     curIdx = cur.prev
     cur = cellsDict[cur.prev]
   }
-  // return path
+}
+
+export const showAdjacent = ({
+  idx,
+  addExploredCell,
+  _getState
+}={}) => {
+  const GRID_WIDTH = _getState().grid.gridWidth
+
+  const adjacent = [
+    !cellIsFarLeft(idx, _getState) ? idx - 1 : -1,
+    !cellIsFarRight(idx, _getState) ? idx + 1 : -1,
+    !cellIsFarBottom(idx, _getState) ? idx + GRID_WIDTH : -1,
+    !cellIsFarTop(idx, _getState) ? idx - GRID_WIDTH : -1
+  ]
+
+  adjacent.map((adj) => {
+    if (isValidCell(adj, _getState)) {
+      addExploredCell(adj)
+    }
+  })
 }
 
 const isValidCell = (idx, _getState) => {
@@ -96,19 +116,19 @@ const isValidCell = (idx, _getState) => {
 }
 
 const cellIsFarLeft = (cellNum, _getState) => {
-  return (cellNum + 1) % _getState().grid.GRID_WIDTH === 1
+  return (cellNum + 1) % _getState().grid.gridWidth === 1
 }
 
 const cellIsFarRight = (cellNum, _getState) => {
-  return (cellNum + 1) % _getState().grid.GRID_WIDTH === 0
+  return (cellNum + 1) % _getState().grid.gridWidth === 0
 }
 
 const cellIsFarTop = (cellNum, _getState) => {
-    return cellNum < _getState().grid.GRID_WIDTH
+  return cellNum < _getState().grid.gridWidth
 }
 
 const cellIsFarBottom = (cellNum, _getState) => {
-    return (cellNum + 1) >= _getState().grid.GRID_WIDTH * (_getState().grid.GRID_HEIGHT - 1)
+  return (cellNum + 1) >= _getState().grid.GRID_WIDTH * (_getState().grid.GRID_HEIGHT - 1)
 }
 
 const sleep = () => {

@@ -3,7 +3,6 @@ import styled from 'styled-components'
 
 // redux
 import { useSelector, useDispatch } from 'react-redux'
-// import { setStartCellIndex, endStartCellIndex } from '../redux/modules/grid'
 
 // constants
 import { COLOR, STATUS } from '../utils/constants'
@@ -14,6 +13,7 @@ width: ${props => props.width + 'em'};
 height: ${props => props.width + 'em'};
 box-sizing: border-box;
 background: ${props => props.color};
+transition: background .2s;
 
 &:hover {
     background: ${props => props.hover};
@@ -21,54 +21,43 @@ background: ${props => props.color};
 }
 `
 
-const Node = ({ width, clickAction, children, idx, visited, explored, path }) => {
-    const dispatch = useDispatch()
+const Node = ({ clickAction, children, idx, path }) => {
 
     // access global state
-    const { startCellIndex, endCellIndex, status } = useSelector(state => state.grid)
+    const { cellWidth, hoverColor, cells } = useSelector(state => state.grid)
 
-    // local state
-    const [color, setColor] = useState(COLOR.DEFAULT)
-    const [hoverColor, setHoverColor] = useState(COLOR.DEFAULT)
+    // const getColor = () => {
+    //     let newColor = COLOR.DEFAULT;
+    //     if (path && path.has(idx)) {
+    //         newColor = COLOR.PATH
+    //     } else if (idx === startCellIndex) {
+    //         newColor = COLOR.START
+    //     } else if (idx === endCellIndex) {
+    //         newColor = COLOR.END
+    //     } else if (visited && visited.has(idx)) {
+    //         newColor = COLOR.VISITED
+    //     } else if (explored && explored.has(idx)) {
+    //         newColor = COLOR.EXPLORED
+    //     }
+    //     return newColor
+    // }
 
-    useEffect(() => {
-        setCurrentColor()
-        setCurrentHoverColor()
-        console.log('update')
-    }, [color, explored, visited])
-
-    const setCurrentColor = () => {
-        if (path && path.has(idx)) {
-            setColor(COLOR.PATH)
-        } else if (idx === startCellIndex) {
-            setColor(COLOR.START)
-        } else if (idx === endCellIndex) {
-            setColor(COLOR.END)
-        } else if (visited && visited.has(idx)) {
-            setColor(COLOR.VISITED)
-        } else if (explored && explored.has(idx)) {
-            setColor(COLOR.EXPLORED)
-        } else {
-            setColor(COLOR.DEFAULT)
-        }
-    }
-
-    const setCurrentHoverColor = () => {
-        if (status === STATUS.SET_START_CELL) {
-            setHoverColor(COLOR.START)
-        } else if (status === STATUS.SET_END_CELL) {
-            setHoverColor(COLOR.END)
-        } else {
-            setHoverColor(COLOR.DEFAULT)
-        }
-    }
+    // const getHoverColor = () => {
+    //     let newColor = COLOR.DEFAULT
+    //     if (status === STATUS.SET_START_CELL) {
+    //         newColor = COLOR.START
+    //     } else if (status === STATUS.SET_END_CELL) {
+    //         newColor = COLOR.END
+    //     }
+    //     return newColor
+    // }
 
     return (
         <CSS
-            width={width}
-            color={color}
+            width={cellWidth}
+            color={cells[idx].color}
             hover={hoverColor}
-            onClick={clickAction}
+            onClick={() => clickAction(idx)}
         >
             {children}
         </CSS>

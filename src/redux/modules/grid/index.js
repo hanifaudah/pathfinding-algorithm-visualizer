@@ -1,46 +1,142 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { STATUS } from '../../../utils/constants'
+import { STATUS, COLOR } from '../../../utils/constants'
+
+const isEndpoint = color => color === COLOR.START || color === COLOR.END
 
 const grid = createSlice({
   name: 'grid',
   initialState: {
-    startCellIndex: -1,
-    endCellIndex: -1,
     gridWidth: 0,
     gridHeight: 0,
+    cellWidth: 0,
+    cells: {},
+    startCellIndex: -1,
+    endCellIndex: -1,
     status: STATUS.DEFAULT,
-    visitedCells: new Set(),
-    exploredCells: new Set(),
+    hoverColor: COLOR.DEFAULT
   },
   reducers: {
     setStartCellIndex(state, { payload }) {
-      state.startCellIndex = payload
-      return state
+      const oldStart = state.startCellIndex
+      const tempCells = {...state.cells}
+      if (oldStart !== -1) {
+        tempCells[oldStart] = {
+          ...state.cells[oldStart],
+          color: COLOR.DEFAULT
+        }
+      }
+      tempCells[payload] = {
+        ...state.cells[payload],
+        color: COLOR.START
+      }
+      return {
+        ...state,
+        startCellIndex: payload,
+        cells: tempCells
+      }
     },
     setEndCellIndex(state, { payload }) {
-      state.endCellIndex = payload
-      return state
+      const oldEnd = state.endCellIndex
+      const tempCells = {...state.cells}
+      if (oldEnd !== -1) {
+        tempCells[oldEnd] = {
+          ...state.cells[oldEnd],
+          color: COLOR.DEFAULT
+        }
+      }
+      tempCells[payload] = {
+        ...state.cells[payload],
+        color: COLOR.END
+      }
+      return {
+        ...state,
+        endCellIndex: payload,
+        cells: tempCells
+      }
+    },
+    setHoverColor(state, { payload }) {
+      return {
+        ...state,
+        hoverColor: payload
+      }
     },
     setStatus(state, { payload }) {
-      state.status = payload
-      return state
+      let hoverColor;
+      switch(payload) {
+        case STATUS.SET_START_CELL:
+          hoverColor = COLOR.START
+          break
+        case STATUS.SET_END_CELL:
+          hoverColor = COLOR.END
+          break
+        default:
+          hoverColor = COLOR.DEFAULT
+      }
+      return {
+        ...state,
+        status: payload,
+        hoverColor
+      }
     },
     addVisitedCell(state, { payload }) {
-      state.visitedCells = new Set(state.visitedCells.add(payload))
-      if (state.exploredCells.has(payload)) {state.exploredCells = new Set(state.exploredCells.delete(payload))}
-      return state
+      return isEndpoint(state.cells[payload].color) ? state : {
+        ...state,
+        cells: {
+          ...state.cells,
+          [payload]: {
+            ...state.cells[payload],
+            // isVisited: true,
+            color: COLOR.VISITED
+          }
+        }
+      }
     },
     addExploredCell(state, { payload }) {
-      state.exploredCells = new Set(state.exploredCells.add(payload))
-      return state
+      return isEndpoint(state.cells[payload].color) ? state : {
+        ...state,
+        cells: {
+          ...state.cells,
+          [payload]: {
+            ...state.cells[payload],
+            // isExplored: true,
+            color: COLOR.EXPLORED
+          }
+        }
+      }
     },
-    setGridWidth(state, { payload }) {
-      state.gridWidth = payload
-      return state
+    addPath(state, { payload }) {
+      return isEndpoint(state.cells[payload].color) ? state : {
+        ...state,
+        cells: {
+          ...state.cells,
+          [payload]: {
+            ...state.cells[payload],
+            // isExplored: true,
+            color: COLOR.PATH
+          }
+        }
+      }
     },
-    setGridHeight(state, { payload }) {
-      state.gridHeight = payload
-      return state
+    setGridDimensions(state, { payload }) {
+      const { width, height, cellWidth } = payload
+
+      // set cell state
+      const initialCells = {}
+      for (let i = 0; i < (width * height); i++) {
+        initialCells[i] = {
+          color: COLOR.DEFAULT,
+          // isVisited: false,
+          // isExplored: false,
+          // isPath: false,
+        }
+      }
+      return {
+        ...state,
+        gridWidth: width,
+        gridHeight: height,
+        cellWidth,
+        cells: initialCells,
+      }
     }
   }
 })
@@ -51,8 +147,8 @@ export const {
   setStatus,
   addVisitedCell,
   addExploredCell,
-  setGridHeight,
-  setGridWidth
+  addPath,
+  setGridDimensions
 } = grid.actions
 
 export default grid.reducer
