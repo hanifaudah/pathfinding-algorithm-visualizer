@@ -5,16 +5,23 @@ import grid from './modules/grid';
 
 // reducers
 import gridReducer from './modules/grid'
+import {reducer as toastrReducer} from 'react-redux-toastr'
 
+const rootReducer = combineReducers({
+  grid: gridReducer,
+  toastr: toastrReducer
+})
+
+export default rootReducer
+
+// Template
+
+// Persist Config:
 // const sideBarPersistConfig = {
 //   key: "sidebar",
 //   storage,
 //   whitelist: ["role", "sideBarType"],
 // }
+// Persist Reducer:
+// sidebar: persistReducer(sideBarPersistConfig, sideBarReducer),
 
-const rootReducer = combineReducers({
-  // sidebar: persistReducer(sideBarPersistConfig, sideBarReducer),
-  grid: gridReducer,
-})
-
-export default rootReducer

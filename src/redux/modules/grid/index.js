@@ -13,7 +13,7 @@ const grid = createSlice({
     startCellIndex: -1,
     endCellIndex: -1,
     status: STATUS.DEFAULT,
-    hoverColor: COLOR.DEFAULT
+    hoverColor: COLOR.NONE
   },
   reducers: {
     setStartCellIndex(state, { payload }) {
@@ -69,8 +69,11 @@ const grid = createSlice({
         case STATUS.SET_END_CELL:
           hoverColor = COLOR.END
           break
+        case STATUS.SET_WALL:
+          hoverColor = COLOR.WALL
+          break
         default:
-          hoverColor = COLOR.DEFAULT
+          hoverColor = COLOR.NONE
       }
       return {
         ...state,
@@ -85,7 +88,6 @@ const grid = createSlice({
           ...state.cells,
           [payload]: {
             ...state.cells[payload],
-            // isVisited: true,
             color: COLOR.VISITED
           }
         }
@@ -98,7 +100,6 @@ const grid = createSlice({
           ...state.cells,
           [payload]: {
             ...state.cells[payload],
-            // isExplored: true,
             color: COLOR.EXPLORED
           }
         }
@@ -111,7 +112,6 @@ const grid = createSlice({
           ...state.cells,
           [payload]: {
             ...state.cells[payload],
-            // isExplored: true,
             color: COLOR.PATH
           }
         }
@@ -125,9 +125,6 @@ const grid = createSlice({
       for (let i = 0; i < (width * height); i++) {
         initialCells[i] = {
           color: COLOR.DEFAULT,
-          // isVisited: false,
-          // isExplored: false,
-          // isPath: false,
         }
       }
       return {
@@ -136,6 +133,39 @@ const grid = createSlice({
         gridHeight: height,
         cellWidth,
         cells: initialCells,
+      }
+    },
+    clearCells(state) {
+      let objLength = Object.keys(state.cells).length
+      for (let key = 0; key < objLength; key++) {
+        state.cells[key].color = COLOR.DEFAULT
+      }
+      return state
+    },
+    clearPath(state) {
+      let objLength = Object.keys(state.cells).length
+      for (let key = 0; key < objLength; key++) {
+        let curColor = state.cells[key].color
+        state.cells[key].color =
+          (curColor === COLOR.START || curColor === COLOR.END || curColor === COLOR.WALL)
+          ?
+          curColor
+          :
+          COLOR.DEFAULT
+      }
+      return state
+    },
+    setWall(state, { payload }) {
+      let curColor = state.cells[payload].color
+      return {
+        ...state,
+        cells: {
+          ...state.cells,
+          [payload]: {
+            ...state.cells[payload],
+            color: (curColor === COLOR.START || curColor === COLOR.END ? curColor : COLOR.WALL)
+          }
+        }
       }
     }
   }
@@ -148,7 +178,10 @@ export const {
   addVisitedCell,
   addExploredCell,
   addPath,
-  setGridDimensions
+  setGridDimensions,
+  clearCells,
+  clearPath,
+  setWall
 } = grid.actions
 
 export default grid.reducer
