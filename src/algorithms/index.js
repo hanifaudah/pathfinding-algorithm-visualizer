@@ -1,17 +1,17 @@
-import { PriorityQueue } from 'buckets-js'
+import { PriorityQueue, Queue } from 'buckets-js'
 
 // toastr
 import {toastr} from 'react-redux-toastr'
-import { COLOR } from '../utils/constants'
 
+// constants
 const TIME_DELAY = 10
 
+/**
+ * Dijkstra's Algorithm Implementation
+ * @param {*} param0
+ */
 export const dijkstra = ({
-  addVisitedCell,
-  addExploredCell,
-  addPath,
   _getState,
-  dispatch
 }={}) => {
   const GRID_WIDTH = _getState().grid.gridWidth
   const GRID_HEIGHT = _getState().grid.gridHeight
@@ -57,19 +57,17 @@ export const dijkstra = ({
     // Start searching
     let cur
     let timeouts = []
+    let delayedQ = new Queue();
     while (!frontier.isEmpty()) {
       cur = frontier.dequeue()
+      delayedQ.enqueue(cur);
 
       // visit cell
-      // timeouts.push(
-      //   setTimeout(
-      //     () => {
-      //       dispatch(addVisitedCell(cur))
-      //     },
-      //     TIME_DELAY * timeouts.length
-      //   )
-      // )
-      dispatch(addVisitedCell(cur))
+      timeouts.push(setTimeout(() => {
+        let cell = document.querySelector(`.cell-${delayedQ.dequeue()}`)
+        cell.classList.remove('EXPLORED')
+        cell.classList.add('VISITED')
+      }, TIME_DELAY * timeouts.length))
 
       cellsDict[cur].isVisited = true
 
@@ -77,25 +75,22 @@ export const dijkstra = ({
         break
       }
 
+
       // Check adjacent cells
       const sourceDistance = cellsDict[cur].distance
       const adjacentList = cellsDict[cur].adjacent
+      let cnt = 0;
       for(let i = 0; i < adjacentList.length; i++) {
         let adj = adjacentList[i]
         const newDistance = sourceDistance + 1
-        if (isValidCell(adj, _getState) && !cellsDict[adj].isVisited && (newDistance < cellsDict[adj].distance) && _getState().grid.cells[adj].color !== COLOR.WALL ) {
-
-          // timeout
-          // ((idx) => {
-          //   timeouts.push(
-          //     setTimeout(
-          //       () => {
-          //       // explore cell
-          //       dispatch(addExploredCell(idx))
-          //     }, TIME_DELAY * timeouts.length)
-          //   )
-          // })(adj)
-          dispatch(addExploredCell(adj))
+        if (isValidCell(adj, _getState) &&
+            !cellsDict[adj].isVisited &&
+            (newDistance < cellsDict[adj].distance) &&
+            !document.querySelector(`.cell-${adj}`).classList.contains('WALL') ) {
+          cnt++;
+          timeouts.push(setTimeout(() => {
+            document.querySelector(`.cell-${adj}`).classList.add('EXPLORED')
+          }, TIME_DELAY * timeouts.length - cnt))
 
           cellsDict[adj].distance = newDistance
           cellsDict[adj].prev = cur
@@ -104,12 +99,15 @@ export const dijkstra = ({
       }
     }
 
+    // Destination not found
+    if (cellsDict[END_INDEX].prev == null) toastr.info('No path found')
+
     // draw path
     let curIdx = END_INDEX
     cur = cellsDict[curIdx]
     let path = []
     while (curIdx !== null) {
-      path.push(curIdx)
+      if (curIdx !== START_INDEX && curIdx !== END_INDEX) path.push(curIdx)
       curIdx = cur.prev
       cur = cellsDict[cur.prev]
     }
@@ -122,7 +120,7 @@ export const dijkstra = ({
           setTimeout(
             () => {
               // set path
-              dispatch(addPath(path[idx]))
+            document.querySelector(`.cell-${path[idx]}`).classList.add('PATH')
             }, TIME_DELAY * timeouts.length)
         )
       })(i)
@@ -132,6 +130,19 @@ export const dijkstra = ({
   }
 }
 
+/**
+ * A* Pathfinding Algorithm Implementation
+ */
+// export const aStar = ({
+//   start
+// }={}) => {
+
+// }
+
+/**
+ * Show Adjacent Cells
+ * @param {*} param0
+ */
 export const showAdjacent = ({
   idx,
   addExploredCell,
@@ -149,10 +160,21 @@ export const showAdjacent = ({
   adjacent.map((adj) => {
     if (isValidCell(adj, _getState)) {
       addExploredCell(adj)
+      // document.querySelector(`cell-${adj}`).classList.add('EXPLORED')
     }
   })
 }
 
+export const animation = () => {
+  let timeouts = []
+  for (let i = 0; i < 10; i++) {
+    timeouts.push(setTimeout(() => {
+      document.querySelector(`.cell-${i}`).classList.add('EXPLORED')
+    }, TIME_DELAY * timeouts.length))
+  }
+}
+
+// Utility Functions
 const isValidCell = (idx, _getState) => {
   return idx >= 0 && idx < (_getState().grid.gridWidth * _getState().grid.gridHeight)
 }

@@ -1,10 +1,8 @@
-import { createSlice } from '@reduxjs/toolkit'
-import { STATUS, COLOR } from '../../../utils/constants'
-
-const isEndpoint = color => color === COLOR.START || color === COLOR.END
+import { createSlice } from "@reduxjs/toolkit";
+import { STATUS, COLOR } from "../../../utils/constants";
 
 const grid = createSlice({
-  name: 'grid',
+  name: "grid",
   initialState: {
     gridWidth: 0,
     gridHeight: 0,
@@ -12,176 +10,93 @@ const grid = createSlice({
     cells: {},
     startCellIndex: -1,
     endCellIndex: -1,
-    status: STATUS.DEFAULT,
-    hoverColor: COLOR.NONE
+    status: "DEFAULT",
+    curAlgo: "DIJKSTRA",
   },
   reducers: {
     setStartCellIndex(state, { payload }) {
-      const oldStart = state.startCellIndex
-      const tempCells = {...state.cells}
+      const oldStart = state.startCellIndex;
+      const tempCells = { ...state.cells };
       if (oldStart !== -1) {
         tempCells[oldStart] = {
           ...state.cells[oldStart],
-          color: COLOR.DEFAULT
-        }
+          color: COLOR.DEFAULT,
+        };
       }
       tempCells[payload] = {
         ...state.cells[payload],
-        color: COLOR.START
-      }
+        color: COLOR.START,
+      };
       return {
         ...state,
         startCellIndex: payload,
-        cells: tempCells
-      }
+        cells: tempCells,
+      };
     },
     setEndCellIndex(state, { payload }) {
-      const oldEnd = state.endCellIndex
-      const tempCells = {...state.cells}
+      const oldEnd = state.endCellIndex;
+      const tempCells = { ...state.cells };
       if (oldEnd !== -1) {
         tempCells[oldEnd] = {
           ...state.cells[oldEnd],
-          color: COLOR.DEFAULT
-        }
+          color: COLOR.DEFAULT,
+        };
       }
       tempCells[payload] = {
         ...state.cells[payload],
-        color: COLOR.END
-      }
+        color: COLOR.END,
+      };
       return {
         ...state,
         endCellIndex: payload,
-        cells: tempCells
-      }
-    },
-    setHoverColor(state, { payload }) {
-      return {
-        ...state,
-        hoverColor: payload
-      }
+        cells: tempCells,
+      };
     },
     setStatus(state, { payload }) {
       let hoverColor;
-      switch(payload) {
+      switch (payload) {
         case STATUS.SET_START_CELL:
-          hoverColor = COLOR.START
-          break
+          hoverColor = COLOR.START;
+          break;
         case STATUS.SET_END_CELL:
-          hoverColor = COLOR.END
-          break
+          hoverColor = COLOR.END;
+          break;
         case STATUS.SET_WALL:
-          hoverColor = COLOR.WALL
-          break
+          hoverColor = COLOR.WALL;
+          break;
         default:
-          hoverColor = COLOR.NONE
+          hoverColor = COLOR.NONE;
       }
       return {
         ...state,
         status: payload,
-        hoverColor
-      }
-    },
-    addVisitedCell(state, { payload }) {
-      return isEndpoint(state.cells[payload].color) ? state : {
-        ...state,
-        cells: {
-          ...state.cells,
-          [payload]: {
-            ...state.cells[payload],
-            color: COLOR.VISITED
-          }
-        }
-      }
-    },
-    addExploredCell(state, { payload }) {
-      return isEndpoint(state.cells[payload].color) ? state : {
-        ...state,
-        cells: {
-          ...state.cells,
-          [payload]: {
-            ...state.cells[payload],
-            color: COLOR.EXPLORED
-          }
-        }
-      }
-    },
-    addPath(state, { payload }) {
-      return isEndpoint(state.cells[payload].color) ? state : {
-        ...state,
-        cells: {
-          ...state.cells,
-          [payload]: {
-            ...state.cells[payload],
-            color: COLOR.PATH
-          }
-        }
-      }
+        hoverColor,
+      };
     },
     setGridDimensions(state, { payload }) {
-      const { width, height, cellWidth } = payload
-
-      // set cell state
-      const initialCells = {}
-      for (let i = 0; i < (width * height); i++) {
-        initialCells[i] = {
-          color: COLOR.DEFAULT,
-        }
-      }
+      const { width, height, cellWidth } = payload;
       return {
         ...state,
         gridWidth: width,
         gridHeight: height,
         cellWidth,
-        cells: initialCells,
-      }
+      };
     },
-    clearCells(state) {
-      let objLength = Object.keys(state.cells).length
-      for (let key = 0; key < objLength; key++) {
-        state.cells[key].color = COLOR.DEFAULT
-      }
-      return state
-    },
-    clearPath(state) {
-      let objLength = Object.keys(state.cells).length
-      for (let key = 0; key < objLength; key++) {
-        let curColor = state.cells[key].color
-        state.cells[key].color =
-          (curColor === COLOR.START || curColor === COLOR.END || curColor === COLOR.WALL)
-          ?
-          curColor
-          :
-          COLOR.DEFAULT
-      }
-      return state
-    },
-    setWall(state, { payload }) {
-      let curColor = state.cells[payload].color
+    setCurAlgo(state, { payload }) {
       return {
         ...state,
-        cells: {
-          ...state.cells,
-          [payload]: {
-            ...state.cells[payload],
-            color: (curColor === COLOR.START || curColor === COLOR.END ? curColor : COLOR.WALL)
-          }
-        }
-      }
-    }
-  }
-})
+        curAlgo: payload,
+      };
+    },
+  },
+});
 
 export const {
   setStartCellIndex,
   setEndCellIndex,
   setStatus,
-  addVisitedCell,
-  addExploredCell,
-  addPath,
   setGridDimensions,
-  clearCells,
-  clearPath,
-  setWall
-} = grid.actions
+  setCurAlgo,
+} = grid.actions;
 
-export default grid.reducer
+export default grid.reducer;
