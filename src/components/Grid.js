@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
 // components
@@ -17,16 +17,18 @@ import {
 } from "../redux/modules/grid";
 
 // css constants
-let bg = "white";
+const bg = "white";
+const borderColor = "rgb(196, 195, 199)";
 
 const CSS = styled.div`
+  overflow: hidden;
   &,
   & * {
     font-family: Josefin Sans;
   }
 
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   flex-direction: column;
   background: ${bg};
@@ -37,48 +39,75 @@ const CSS = styled.div`
     display: flex;
     flex-wrap: wrap;
     width: 100vw;
+    padding-bottom: 1em;
   }
 
-  .cell {
-    border: 1px solid grey;
+  .cell,
+  .placeholder-cell {
+    border: 0.5px solid ${borderColor};
     width: calc(100vw / ${(props) => props.gridWidth});
     height: calc(100vw / ${(props) => props.gridWidth});
     box-sizing: border-box;
     background-color: ${COLOR.DEFAULT.color};
 
-    &:hover {
-      background-color: ${(props) => props.hover};
-      opacity: 0.4;
-    }
-
-    ${(() => {
-      let colorClasses = "";
-      Object.keys(COLOR).map((key) => {
-        colorClasses += `
+    ${(props) =>
+      ((props) => {
+        let colorClasses = "";
+        console.log(props.animate);
+        Object.keys(COLOR).map((key) => {
+          colorClasses += `
                     &.${COLOR[key].verbose} {
                         background-color: ${COLOR[key].color};
-                        transition: all .1s;
+                        transition: all ${props.animate ? ".5" : "0"}s;
+                        animation: grow ${
+                          props.animate
+                            ? COLOR[key] === COLOR.VISITED ||
+                              COLOR[key] === COLOR.EXPLORED
+                              ? ".5"
+                              : ".25"
+                            : "0"
+                        }s;
+                        ${
+                          COLOR[key] === COLOR.WALL
+                            ? `border-color: ${COLOR.WALL.color};`
+                            : ""
+                        }
                     }
                 `;
-      });
-      return colorClasses;
-    })()}
+        });
+        return colorClasses;
+      })(props)}
+  }
+
+  @keyframes grow {
+    from {
+      transform: scale(0);
+    }
+    to {
+      transform: scale(1);
+    }
   }
 `;
 
 const Grid = () => {
   const dispatch = useDispatch();
 
-  // global status
-  const { status, gridWidth, gridHeight, cellWidth } = useSelector(
-    (state) => state.grid
-  );
+  // global state
+  const {
+    status,
+    gridWidth,
+    gridHeight,
+    cellWidth,
+    endCellIndex,
+    startCellIndex,
+    pathDrawn,
+  } = useSelector((state) => state.grid);
 
   useEffect(() => {
     dispatch(
       setGridDimensions({
-        width: 40,
-        height: 15,
+        width: 50,
+        height: 18,
       })
     );
   }, []);
@@ -101,18 +130,43 @@ const Grid = () => {
     }
   };
 
-  const handleMouseOver = (cellNum, event) => {
-    // If mouse down
+  const handleMouseOver = (event, cellNum) => {
     event.preventDefault();
     if (event.buttons === 1) {
       if (status === STATUS.SET_WALL) {
+        document.querySelector(`.cell-${cellNum}`).classList.add("WALL");
+      } else if (status === STATUS.SET_END_CELL) {
+        dispatch(setEndCellIndex(cellNum));
+      } else if (status === STATUS.SET_START_CELL) {
+        dispatch(setStartCellIndex(cellNum));
+      }
+    }
+  };
+
+  const handleMouseDown = (event, cellNum) => {
+    event.preventDefault();
+    if (event.buttons === 1) {
+      if (status === STATUS.DEFAULT) {
+        if (cellNum === endCellIndex) dispatch(setStatus(STATUS.SET_END_CELL));
+        else if (cellNum === startCellIndex)
+          dispatch(setStatus(STATUS.SET_START_CELL));
+      } else if (status === STATUS.SET_WALL) {
         document.querySelector(`.cell-${cellNum}`).classList.add("WALL");
       }
     }
   };
 
+  const handleMouseUp = (event, cellNum) => {
+    event.preventDefault();
+    if (
+      (cellNum === endCellIndex && status === STATUS.SET_END_CELL) ||
+      (cellNum === startCellIndex && status === STATUS.SET_START_CELL)
+    )
+      dispatch(setStatus(STATUS.DEFAULT));
+  };
+
   return (
-    <CSS gridWidth={gridWidth} cellWidth={cellWidth}>
+    <CSS gridWidth={gridWidth} cellWidth={cellWidth} animate={!pathDrawn}>
       <MenuBar />
       <div className="cell-container">
         {(() => {
@@ -123,8 +177,10 @@ const Grid = () => {
                 key={idx}
                 className={`cell cell-${idx}`}
                 onClick={() => handleCellClick(idx)}
-                onMouseDown={(e) => handleMouseOver(idx, e)}
-                onMouseOver={(e) => handleMouseOver(idx, e)}
+                onMouseDown={(e) => handleMouseDown(e, idx)}
+                onMouseOver={(e) => handleMouseOver(e, idx)}
+                onMouseUp={(e) => handleMouseUp(e, idx)}
+                // onDrag={(e) => handleDrag(e, idx)}
               ></div>
             );
           }
